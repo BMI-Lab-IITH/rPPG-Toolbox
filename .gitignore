@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 *.log
+*.avi
 *.mat
 .idea
 preprocess

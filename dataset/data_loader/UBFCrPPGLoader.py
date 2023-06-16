@@ -4,6 +4,7 @@ Details for the UBFC-rPPG Dataset see https://sites.google.com/view/ybenezeth/ub
 If you use this dataset, please cite this paper:
 S. Bobbia, R. Macwan, Y. Benezeth, A. Mansouri, J. Dubois, "Unsupervised skin tissue segmentation for remote photoplethysmography", Pattern Recognition Letters, 2017.
 """
+
 import glob
 import os
 import re
@@ -39,6 +40,8 @@ class UBFCrPPGLoader(BaseLoader):
                 name(string): name of the dataloader.
                 config_data(CfgNode): data settings(ref:config.py).
         """
+        print("Initializing UBFC-rPPG dataset...")
+        print("data_path: ", data_path)
         super().__init__(name, data_path, config_data)
 
     def get_raw_data(self, data_path):
@@ -112,5 +115,5 @@ class UBFCrPPGLoader(BaseLoader):
         with open(bvp_file, "r") as f:
             str1 = f.read()
             str1 = str1.split("\n")
-            bvp = [float(x) for x in str1[0].split()]
+            bvp = [float(x) for x in str1[0].split(',')]
         return np.asarray(bvp)

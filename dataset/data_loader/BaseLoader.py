@@ -168,7 +168,7 @@ class BaseLoader(Dataset):
             if m >= 0:
                 Cn = np.true_divide(RGB[m:n, :], np.mean(RGB[m:n, :], axis=0))
                 Cn = np.mat(Cn).H
-                S = np.matmul(np.array([[0, 1, -1], [-2, 1, 1]]), Cn)
+                S = np.matmul(np.array([[0, 1, -1], [-2, 1, 1]]), Cn, dtype=object)
                 h = S[0, :] + (np.std(S[0, :]) / np.std(S[1, :])) * S[1, :]
                 mean_h = np.mean(h)
                 for temp in range(h.shape[1]):
@@ -191,7 +191,7 @@ class BaseLoader(Dataset):
         amplitude_envelope = np.abs(analytic_signal) # derive envelope signal
         env_norm_bvp = pos_bvp/amplitude_envelope # normalize by env
 
-        return np.array(env_norm_bvp) # return POS psuedo labels
+        return np.array(env_norm_bvp, dtype=object) # return POS psuedo labels
     
     def preprocess_dataset(self, data_dirs, config_preprocess, begin, end):
         """Parses and preprocesses all the raw data based on split.
@@ -257,8 +257,8 @@ class BaseLoader(Dataset):
             frames_clips, bvps_clips = self.chunk(
                 data, bvps, config_preprocess.CHUNK_LENGTH)
         else:
-            frames_clips = np.array([data])
-            bvps_clips = np.array([bvps])
+            frames_clips = np.array([data], dtype=object)
+            bvps_clips = np.array([bvps], dtype=object)
 
         return frames_clips, bvps_clips
 
@@ -362,7 +362,8 @@ class BaseLoader(Dataset):
         clip_num = frames.shape[0] // chunk_length
         frames_clips = [frames[i * chunk_length:(i + 1) * chunk_length] for i in range(clip_num)]
         bvps_clips = [bvps[i * chunk_length:(i + 1) * chunk_length] for i in range(clip_num)]
-        return np.array(frames_clips), np.array(bvps_clips)
+        # return np.array(frames_clips), np.array(bvps_clips)
+        return np.array(frames_clips, dtype=object), np.array(bvps_clips, dtype=object)
 
     def save(self, frames_clips, bvps_clips, filename):
         """Save all the chunked data.
