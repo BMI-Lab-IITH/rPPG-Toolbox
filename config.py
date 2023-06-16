@@ -170,7 +170,7 @@ _C.TEST.DATA.FILTERING.EXCLUSION_LIST = ['']
 _C.TEST.DATA.FILTERING.SELECT_TASKS = False
 _C.TEST.DATA.FILTERING.TASK_LIST = ['']
 _C.TEST.DATA.FS = 0
-_C.TEST.DATA.DATA_PATH = ''
+_C.TEST.DATA.DATA_PATH = 'RawData'
 _C.TEST.DATA.EXP_DATA_NAME = ''
 _C.TEST.DATA.CACHED_PATH = 'PreprocessedData'
 _C.TEST.DATA.FILE_LIST_PATH = os.path.join(_C.TEST.DATA.CACHED_PATH, 'DataFileLists')
@@ -313,7 +313,7 @@ _C.INFERENCE.MODEL_PATH = ''
 # -----------------------------------------------------------------------------
 # Device settings
 # -----------------------------------------------------------------------------
-_C.DEVICE = "cuda:0"
+_C.DEVICE = "cpu"
 _C.NUM_OF_GPU_TRAIN = 1
 
 # -----------------------------------------------------------------------------

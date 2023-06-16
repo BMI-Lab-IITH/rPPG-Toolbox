@@ -12,7 +12,6 @@ from neural_methods.loss.NegPearsonLoss import Neg_Pearson
 from neural_methods.model.EfficientPhys import EfficientPhys
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from tqdm import tqdm
-from torch.utils.data import dataloader
 
 
 class EfficientPhysTrainer(BaseTrainer):
@@ -20,7 +19,7 @@ class EfficientPhysTrainer(BaseTrainer):
     def __init__(self, config, data_loader):
         """Inits parameters from args and the writer for TensorboardX."""
         super().__init__()
-        self.device = torch.device('cpu')
+        self.device = torch.device(config.DEVICE)
         self.frame_depth = config.MODEL.EFFICIENTPHYS.FRAME_DEPTH
         self.max_epoch_num = config.TRAIN.EPOCHS
         self.model_dir = config.MODEL.MODEL_DIR
@@ -155,7 +154,7 @@ class EfficientPhysTrainer(BaseTrainer):
         else:
             if self.config.TEST.USE_LAST_EPOCH:
                 last_epoch_model_path = os.path.join(
-                    self.model_dir, self.model_file_name + '_Epoch' + str(self.max_epoch_num - 1) + '.pth')
+                self.model_dir, self.model_file_name + '_Epoch' + str(self.max_epoch_num - 1) + '.pth')
                 print("Testing uses last epoch as non-pretrained model!")
                 print(last_epoch_model_path)
                 self.model.load_state_dict(torch.load(last_epoch_model_path, map_location=torch.device('cpu')))
@@ -166,33 +165,34 @@ class EfficientPhysTrainer(BaseTrainer):
                 print(best_model_path)
                 self.model.load_state_dict(torch.load(best_model_path, map_location=torch.device('cpu')))
 
-        self.model = self.model.to(torch.device('cpu'))
+        self.model = self.model.to(self.config.DEVICE)
         self.model.eval()
         with torch.no_grad():
-            test_loader = dataloader(data_loader['test'], batch_size=self.config.TEST.BATCH_SIZE, shuffle=False)
-            for test_batch in test_loader:
+            for _, test_batch in enumerate(data_loader['test']):
+                print("Line 172 is executed")
                 batch_size = test_batch[0].shape[0]
-                data_test, labels_test = test_batch[0].to(torch.device('cpu')), test_batch[1].to(torch.device('cpu'))
+                data_test, labels_test = test_batch[0].to(
+                    self.config.DEVICE), test_batch[1].to(self.config.DEVICE)
                 N, D, C, H, W = data_test.shape
                 data_test = data_test.view(N * D, C, H, W)
                 labels_test = labels_test.view(-1, 1)
-                data_test = data_test[:((N * D) // self.base_len) * self.base_len].contiguous()
+                data_test = data_test[:(N * D) // self.base_len * self.base_len]
                 # Add one more frame for EfficientPhys since it does torch.diff for the input
                 last_frame = torch.unsqueeze(data_test[-1, :, :, :], 0).repeat(self.num_of_gpu, 1, 1, 1)
                 data_test = torch.cat((data_test, last_frame), 0)
-                labels_test = labels_test[:((N * D) // self.base_len) * self.base_len].contiguous()
+                labels_test = labels_test[:(N * D) // self.base_len * self.base_len]
                 pred_ppg_test = self.model(data_test)
-                pred_ppg_test = pred_ppg_test.view(-1, self.base_len, 1)
-                predictions[test_batch[2][0]] = pred_ppg_test.cpu().numpy()
-                labels[test_batch[2][0]] = labels_test.cpu().numpy()
-                del pred_ppg_test
-                del data_test
-                del labels_test
-                gc.collect()
+                for idx in range(batch_size):
+                    subj_index = test_batch[2][idx]
+                    sort_index = int(test_batch[3][idx])
+                    if subj_index not in predictions.keys():
+                        predictions[subj_index] = dict()
+                        labels[subj_index] = dict()
+                    predictions[subj_index][sort_index] = pred_ppg_test[idx * self.chunk_len:(idx + 1) * self.chunk_len]
+                    labels[subj_index][sort_index] = labels_test[idx * self.chunk_len:(idx + 1) * self.chunk_len]
 
-        return predictions, labels
-
-
+        print('')
+        calculate_metrics(predictions, labels, self.config)
 
     def save_model(self, index):
         if not os.path.exists(self.model_dir):
