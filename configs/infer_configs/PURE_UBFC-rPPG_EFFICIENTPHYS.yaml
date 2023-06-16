@@ -14,7 +14,7 @@ TEST:
     BEGIN: 0.0
     END: 1.0
     PREPROCESS:
-      DATA_TYPE: ['Standardized' ]
+      DATA_TYPE: ['Standardized']
       LABEL_TYPE: DiffNormalized
       DO_CHUNK: True
       CHUNK_LENGTH: 180
@@ -39,7 +39,7 @@ MODEL:
   EFFICIENTPHYS:
     FRAME_DEPTH: 10
 INFERENCE:
-  BATCH_SIZE: 4
+  BATCH_SIZE: 2
   EVALUATION_METHOD: 'FFT'        # "FFT" or "peak detection"
   EVALUATION_WINDOW:
     USE_SMALLER_WINDOW: False        # Change this if you'd like an evaluation window smaller than the test video length

@@ -87,8 +87,8 @@ class BaseLoader(Dataset):
 
     def __getitem__(self, index):
         """Returns a clip of video(3,T,W,H) and it's corresponding signals(T)."""
-        data = np.load(self.inputs[index])
-        label = np.load(self.labels[index])
+        data = np.load(self.inputs[index], allow_pickle=True)
+        label = np.load(self.labels[index], allow_pickle=True)
         if self.data_format == 'NDCHW':
             data = np.transpose(data, (0, 3, 1, 2))
         elif self.data_format == 'NCDHW':
@@ -136,7 +136,7 @@ class BaseLoader(Dataset):
 
     def read_npy_video(self, video_file):
         """Reads a video file in the numpy format (.npy), returns frames(T,H,W,3)"""
-        frames = np.load(video_file[0])
+        frames = np.load(video_file[0], allow_pickle=True)
         if np.issubdtype(frames.dtype, np.integer) and np.min(frames) >= 0 and np.max(frames) <= 255:
             processed_frames = [frame.astype(np.uint8)[..., :3] for frame in frames]
         elif np.issubdtype(frames.dtype, np.floating) and np.min(frames) >= 0.0 and np.max(frames) <= 1.0:
