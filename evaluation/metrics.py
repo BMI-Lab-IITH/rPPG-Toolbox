@@ -44,46 +44,59 @@ def _reform_data_from_dict(data, flatten=True):
 
 def calculate_metrics(predictions, labels, config):
     """Calculate rPPG Metrics (MAE, RMSE, MAPE, Pearson Coef.)."""
+    print("Calculating Metrics...")
     predict_hr_fft_all = list()
     gt_hr_fft_all = list()
     predict_hr_peak_all = list()
     gt_hr_peak_all = list()
     SNR_all = list()
     for index in tqdm(predictions.keys(), ncols=80):
+        print("Entering for loop... @54 line")
         prediction = _reform_data_from_dict(predictions[index])
         label = _reform_data_from_dict(labels[index])
 
         video_frame_size = prediction.shape[0]
         if config.INFERENCE.EVALUATION_WINDOW.USE_SMALLER_WINDOW:
+            print("Entering if statement... @60 line")
             window_frame_size = config.INFERENCE.EVALUATION_WINDOW.WINDOW_SIZE * config.TEST.DATA.FS
             if window_frame_size > video_frame_size:
+                print("Entering if statement... @63 line")
                 window_frame_size = video_frame_size
         else:
+            print("Entering else statement... @66 line")
             window_frame_size = video_frame_size
 
         for i in range(0, len(prediction), window_frame_size):
+            print("Entering for loop... @70 line")
             pred_window = prediction[i:i+window_frame_size]
             label_window = label[i:i+window_frame_size]
-
+            print("Pred window: ", pred_window)
+            print("Label window: ", label_window)
             if len(pred_window) < 9:
                 print(f"Window frame size of {len(pred_window)} is smaller than minimum pad length of 9. Window ignored!")
                 continue
 
-            if config.TEST.DATA.PREPROCESS.LABEL_TYPE == "Standardized" or \
-                    config.TEST.DATA.PREPROCESS.LABEL_TYPE == "Raw":
+            if config.TEST.DATA.PREPROCESS.LABEL_TYPE == "Standardized" or config.TEST.DATA.PREPROCESS.LABEL_TYPE == "Raw":
+                print("Entering if statement... @80 line")
                 diff_flag_test = False
             elif config.TEST.DATA.PREPROCESS.LABEL_TYPE == "DiffNormalized":
+                print("Entering elif statement... @83 line")
                 diff_flag_test = True
             else:
                 raise ValueError("Unsupported label type in testing!")
+
+            print("Entering if statement... @87 line")
             
             if config.INFERENCE.EVALUATION_METHOD == "peak detection":
+                print("Entering if statement... @89 line")
                 gt_hr_peak, pred_hr_peak, SNR = calculate_metric_per_video(
                     prediction, label, diff_flag=diff_flag_test, fs=config.TEST.DATA.FS, hr_method='Peak')
+                print("Entering if statement... @92 line")
                 gt_hr_peak_all.append(gt_hr_peak)
                 predict_hr_peak_all.append(pred_hr_peak)
                 SNR_all.append(SNR)
             elif config.INFERENCE.EVALUATION_METHOD == "FFT":
+                print("Entering elif statement... @96 line")
                 gt_hr_fft, pred_hr_fft, SNR = calculate_metric_per_video(
                     prediction, label, diff_flag=diff_flag_test, fs=config.TEST.DATA.FS, hr_method='FFT')
                 gt_hr_fft_all.append(gt_hr_fft)

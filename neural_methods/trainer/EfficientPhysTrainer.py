@@ -169,7 +169,6 @@ class EfficientPhysTrainer(BaseTrainer):
         self.model.eval()
         with torch.no_grad():
             for _, test_batch in enumerate(data_loader['test']):
-                print("Line 172 is executed")
                 batch_size = test_batch[0].shape[0]
                 data_test, labels_test = test_batch[0].to(
                     self.config.DEVICE), test_batch[1].to(self.config.DEVICE)
@@ -192,6 +191,7 @@ class EfficientPhysTrainer(BaseTrainer):
                     labels[subj_index][sort_index] = labels_test[idx * self.chunk_len:(idx + 1) * self.chunk_len]
 
         print('')
+        print("===Calculating Metrics===")
         calculate_metrics(predictions, labels, self.config)
 
     def save_model(self, index):

@@ -30,6 +30,7 @@ def _detrend(input_signal, lambda_value):
 
 def mag2db(mag):
     """Convert magnitude to db."""
+    print("mag", mag)
     return 20. * np.log10(mag)
 
 def _calculate_fft_hr(ppg_signal, fs=60, low_pass=0.75, high_pass=2.5):
@@ -38,10 +39,15 @@ def _calculate_fft_hr(ppg_signal, fs=60, low_pass=0.75, high_pass=2.5):
     N = _next_power_of_2(ppg_signal.shape[1])
     f_ppg, pxx_ppg = scipy.signal.periodogram(ppg_signal, fs=fs, nfft=N, detrend=False)
     fmask_ppg = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass))
+    if fmask_ppg.size == 0:
+        raise ValueError("No valid frequencies found in the specified range.")
     mask_ppg = np.take(f_ppg, fmask_ppg)
     mask_pxx = np.take(pxx_ppg, fmask_ppg)
+    if mask_ppg.size == 0 or mask_pxx.size == 0:
+        raise ValueError("No valid frequencies found in the specified range.")
     fft_hr = np.take(mask_ppg, np.argmax(mask_pxx, 0))[0] * 60
     return fft_hr
+
 
 def _calculate_peak_hr(ppg_signal, fs):
     """Calculate heart rate based on PPG using peak detection."""
@@ -98,18 +104,37 @@ def _calculate_SNR(pred_ppg_signal, hr_label, fs=30, low_pass=0.75, high_pass=2.
 
 def calculate_metric_per_video(predictions, labels, fs=30, diff_flag=True, use_bandpass=True, hr_method='FFT'):
     """Calculate video-level HR and SNR"""
+    print('Calculating video-level HR and SNR...')
     if diff_flag:  # if the predictions and labels are 1st derivative of PPG signal.
+        print("Post-Process Line @103")
         predictions = _detrend(np.cumsum(predictions), 100)
         labels = _detrend(np.cumsum(labels), 100)
     else:
+        print("Post-Process Line @107")
         predictions = _detrend(predictions, 100)
         labels = _detrend(labels, 100)
+    # if use_bandpass:
+    #     # bandpass filter between [0.75, 2.5] Hz
+    #     # equals [45, 150] beats per min
+    #     [b, a] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
+    #     predictions = scipy.signal.filtfilt(b, a, np.double(predictions))
+    #     labels = scipy.signal.filtfilt(b, a, np.double(labels)) 
     if use_bandpass:
         # bandpass filter between [0.75, 2.5] Hz
         # equals [45, 150] beats per min
         [b, a] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
-        predictions = scipy.signal.filtfilt(b, a, np.double(predictions))
-        labels = scipy.signal.filtfilt(b, a, np.double(labels))
+
+        # Zero-pad the signals to ensure they are longer than padlen
+        padlen = max(len(b), len(a)) * 3  # Adjust the padding length as needed
+        predictions_padded = np.pad(predictions, (padlen, padlen), mode='constant')
+        labels_padded = np.pad(labels, (padlen, padlen), mode='constant')
+
+        predictions_filtered = scipy.signal.filtfilt(b, a, np.double(predictions_padded))
+        labels_filtered = scipy.signal.filtfilt(b, a, np.double(labels_padded))
+
+        # Remove the padding from the filtered signals
+        predictions = predictions_filtered[padlen:-padlen]
+        labels = labels_filtered[padlen:-padlen]       
     if hr_method == 'FFT':
         hr_pred = _calculate_fft_hr(predictions, fs=fs)
         hr_label = _calculate_fft_hr(labels, fs=fs)
