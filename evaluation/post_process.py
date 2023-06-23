@@ -5,13 +5,13 @@ The file also  includes helper funcs such as detrend, mag2db etc.
 import numpy as np
 import scipy
 import scipy.io
+import scipy.signal
 from scipy.signal import butter
 from scipy.sparse import spdiags
 
 
 def _next_power_of_2(x):
-    """Calculate the nearest power of 2."""
-    return 1 if x == 0 else 2 ** (x - 1).bit_length()
+    return 1 if x == 0 else 2**(x - 1).bit_length()
 
 def _detrend(input_signal, lambda_value):
     """Detrend PPG signal."""
@@ -30,7 +30,7 @@ def _detrend(input_signal, lambda_value):
 
 def mag2db(mag):
     """Convert magnitude to db."""
-    print("mag", mag)
+    mag = np.maximum(mag, np.finfo(float).tiny)  # Avoid zero or negative values
     return 20. * np.log10(mag)
 
 def _calculate_fft_hr(ppg_signal, fs=60, low_pass=0.75, high_pass=2.5):
@@ -56,16 +56,16 @@ def _calculate_peak_hr(ppg_signal, fs):
     return hr_peak
 
 def _calculate_SNR(pred_ppg_signal, hr_label, fs=30, low_pass=0.75, high_pass=2.5):
-    """Calculate SNR as the ratio of the area under the curve of the frequency spectrum around the first and second harmonics 
-        of the ground truth HR frequency to the area under the curve of the remainder of the frequency spectrum, from 0.75 Hz
-        to 2.5 Hz. 
+    """Calculate SNR as the ratio of the area under the curve of the frequency spectrum around the first and second harmonics
+    of the ground truth HR frequency to the area under the curve of the remainder of the frequency spectrum, from 0.75 Hz
+    to 2.5 Hz.
 
-        Args:
-            pred_ppg_signal(np.array): predicted PPG signal 
-            label_ppg_signal(np.array): ground truth, label PPG signal
-            fs(int or float): sampling rate of the video
-        Returns:
-            SNR(float): Signal-to-Noise Ratio
+    Args:
+        pred_ppg_signal(np.array): predicted PPG signal
+        label_ppg_signal(np.array): ground truth, label PPG signal
+        fs(int or float): sampling rate of the video
+    Returns:
+        SNR(float): Signal-to-Noise Ratio
     """
     # Get the first and second harmonics of the ground truth HR in Hz
     first_harmonic_freq = hr_label / 60
@@ -74,15 +74,15 @@ def _calculate_SNR(pred_ppg_signal, hr_label, fs=30, low_pass=0.75, high_pass=2.
 
     # Calculate FFT
     pred_ppg_signal = np.expand_dims(pred_ppg_signal, 0)
-    N = _next_power_of_2(pred_ppg_signal.shape[1])
+    N = 2 ** int(np.ceil(np.log2(pred_ppg_signal.shape[1])))  # Next power of 2
     f_ppg, pxx_ppg = scipy.signal.periodogram(pred_ppg_signal, fs=fs, nfft=N, detrend=False)
 
     # Calculate the indices corresponding to the frequency ranges
     idx_harmonic1 = np.argwhere((f_ppg >= (first_harmonic_freq - deviation)) & (f_ppg <= (first_harmonic_freq + deviation)))
     idx_harmonic2 = np.argwhere((f_ppg >= (second_harmonic_freq - deviation)) & (f_ppg <= (second_harmonic_freq + deviation)))
-    idx_remainder = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass) \
-     & ~((f_ppg >= (first_harmonic_freq - deviation)) & (f_ppg <= (first_harmonic_freq + deviation))) \
-     & ~((f_ppg >= (second_harmonic_freq - deviation)) & (f_ppg <= (second_harmonic_freq + deviation))))
+    idx_remainder = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass)
+                                & ~((f_ppg >= (first_harmonic_freq - deviation)) & (f_ppg <= (first_harmonic_freq + deviation)))
+                                & ~((f_ppg >= (second_harmonic_freq - deviation)) & (f_ppg <= (second_harmonic_freq + deviation))))
 
     # Select the corresponding values from the periodogram
     pxx_ppg = np.squeeze(pxx_ppg)
@@ -96,21 +96,20 @@ def _calculate_SNR(pred_ppg_signal, hr_label, fs=30, low_pass=0.75, high_pass=2.
     signal_power_rem = np.sum(pxx_remainder)
 
     # Calculate the SNR as the ratio of the areas
-    if not signal_power_rem == 0: # catches divide by 0 runtime warning 
+    if signal_power_rem != 0:  # Avoid divide by zero
         SNR = mag2db((signal_power_hm1 + signal_power_hm2) / signal_power_rem)
     else:
         SNR = 0
     return SNR
 
 def calculate_metric_per_video(predictions, labels, fs=30, diff_flag=True, use_bandpass=True, hr_method='FFT'):
+    print("predictions", predictions)
     """Calculate video-level HR and SNR"""
     print('Calculating video-level HR and SNR...')
     if diff_flag:  # if the predictions and labels are 1st derivative of PPG signal.
-        print("Post-Process Line @103")
         predictions = _detrend(np.cumsum(predictions), 100)
         labels = _detrend(np.cumsum(labels), 100)
     else:
-        print("Post-Process Line @107")
         predictions = _detrend(predictions, 100)
         labels = _detrend(labels, 100)
     # if use_bandpass:
