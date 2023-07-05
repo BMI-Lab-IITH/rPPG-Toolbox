@@ -3,6 +3,7 @@
 import argparse
 import random
 import time
+
 import numpy as np
 import torch
 from config import get_config
@@ -37,7 +38,7 @@ def seed_worker(worker_id):
 def add_args(parser):
     """Adds arguments for parser."""
     parser.add_argument('--config_file', required=False,
-                        default="configs/train_configs/PURE_UBFC-rPPG_EFFICIENTPHYS.yaml", type=str, help="The name of the model.")
+                        default="configs/train_configs/PURE_PURE_UBFC-rPPG_TSCAN_BASIC.yaml", type=str, help="The name of the model.")
     '''Neural Method Sample YAML LIST:
       SCAMPS_SCAMPS_UBFC-rPPG_TSCAN_BASIC.yaml
       SCAMPS_SCAMPS_UBFC-rPPG_DEEPPHYS_BASIC.yaml
@@ -159,7 +160,7 @@ if __name__ == "__main__":
                 config_data=config.TRAIN.DATA)
             data_loader_dict['train'] = DataLoader(
                 dataset=train_data_loader,
-                num_workers=0,
+                num_workers=16,
                 batch_size=config.TRAIN.BATCH_SIZE,
                 shuffle=True,
                 worker_init_fn=seed_worker,
@@ -198,7 +199,7 @@ if __name__ == "__main__":
                 config_data=config.VALID.DATA)
             data_loader_dict["valid"] = DataLoader(
                 dataset=valid_data,
-                num_workers=0,
+                num_workers=16,
                 batch_size=config.TRAIN.BATCH_SIZE,  # batch size for val is the same as train
                 shuffle=False,
                 worker_init_fn=seed_worker,
@@ -239,7 +240,7 @@ if __name__ == "__main__":
                 config_data=config.TEST.DATA)
             data_loader_dict["test"] = DataLoader(
                 dataset=test_data,
-                num_workers=0,
+                num_workers=16,
                 batch_size=config.INFERENCE.BATCH_SIZE,
                 shuffle=False,
                 worker_init_fn=seed_worker,
@@ -272,7 +273,7 @@ if __name__ == "__main__":
             config_data=config.UNSUPERVISED.DATA)
         data_loader_dict["unsupervised"] = DataLoader(
             dataset=unsupervised_data,
-            num_workers=0,
+            num_workers=16,
             batch_size=1,
             shuffle=False,
             worker_init_fn=seed_worker,

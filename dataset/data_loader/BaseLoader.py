@@ -87,8 +87,8 @@ class BaseLoader(Dataset):
 
     def __getitem__(self, index):
         """Returns a clip of video(3,T,W,H) and it's corresponding signals(T)."""
-        data = np.load(self.inputs[index], allow_pickle=True)
-        label = np.load(self.labels[index], allow_pickle=True)
+        data = np.load(self.inputs[index])
+        label = np.load(self.labels[index])
         if self.data_format == 'NDCHW':
             data = np.transpose(data, (0, 3, 1, 2))
         elif self.data_format == 'NCDHW':
@@ -136,7 +136,7 @@ class BaseLoader(Dataset):
 
     def read_npy_video(self, video_file):
         """Reads a video file in the numpy format (.npy), returns frames(T,H,W,3)"""
-        frames = np.load(video_file[0], allow_pickle=True)
+        frames = np.load(video_file[0])
         if np.issubdtype(frames.dtype, np.integer) and np.min(frames) >= 0 and np.max(frames) <= 255:
             processed_frames = [frame.astype(np.uint8)[..., :3] for frame in frames]
         elif np.issubdtype(frames.dtype, np.floating) and np.min(frames) >= 0.0 and np.max(frames) <= 1.0:
@@ -168,7 +168,7 @@ class BaseLoader(Dataset):
             if m >= 0:
                 Cn = np.true_divide(RGB[m:n, :], np.mean(RGB[m:n, :], axis=0))
                 Cn = np.mat(Cn).H
-                S = np.matmul(np.array([[0, 1, -1], [-2, 1, 1]]), Cn, dtype=object)
+                S = np.matmul(np.array([[0, 1, -1], [-2, 1, 1]]), Cn)
                 h = S[0, :] + (np.std(S[0, :]) / np.std(S[1, :])) * S[1, :]
                 mean_h = np.mean(h)
                 for temp in range(h.shape[1]):
@@ -191,7 +191,7 @@ class BaseLoader(Dataset):
         amplitude_envelope = np.abs(analytic_signal) # derive envelope signal
         env_norm_bvp = pos_bvp/amplitude_envelope # normalize by env
 
-        return np.array(env_norm_bvp, dtype=object) # return POS psuedo labels
+        return np.array(env_norm_bvp) # return POS psuedo labels
     
     def preprocess_dataset(self, data_dirs, config_preprocess, begin, end):
         """Parses and preprocesses all the raw data based on split.
@@ -257,8 +257,8 @@ class BaseLoader(Dataset):
             frames_clips, bvps_clips = self.chunk(
                 data, bvps, config_preprocess.CHUNK_LENGTH)
         else:
-            frames_clips = np.array([data], dtype=object)
-            bvps_clips = np.array([bvps], dtype=object)
+            frames_clips = np.array([data])
+            bvps_clips = np.array([bvps])
 
         return frames_clips, bvps_clips
 
@@ -362,8 +362,7 @@ class BaseLoader(Dataset):
         clip_num = frames.shape[0] // chunk_length
         frames_clips = [frames[i * chunk_length:(i + 1) * chunk_length] for i in range(clip_num)]
         bvps_clips = [bvps[i * chunk_length:(i + 1) * chunk_length] for i in range(clip_num)]
-        # return np.array(frames_clips), np.array(bvps_clips)
-        return np.array(frames_clips, dtype=object), np.array(bvps_clips, dtype=object)
+        return np.array(frames_clips), np.array(bvps_clips,  dtype=object)
 
     def save(self, frames_clips, bvps_clips, filename):
         """Save all the chunked data.

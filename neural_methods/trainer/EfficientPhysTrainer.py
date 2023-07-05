@@ -149,7 +149,7 @@ class EfficientPhysTrainer(BaseTrainer):
         if self.config.TOOLBOX_MODE == "only_test":
             if not os.path.exists(self.config.INFERENCE.MODEL_PATH):
                 raise ValueError("Inference model path error! Please check INFERENCE.MODEL_PATH in your yaml.")
-            self.model.load_state_dict(torch.load(self.config.INFERENCE.MODEL_PATH, map_location=torch.device('cpu')))
+            self.model.load_state_dict(torch.load(self.config.INFERENCE.MODEL_PATH))
             print("Testing uses pretrained model!")
         else:
             if self.config.TEST.USE_LAST_EPOCH:
@@ -157,13 +157,13 @@ class EfficientPhysTrainer(BaseTrainer):
                 self.model_dir, self.model_file_name + '_Epoch' + str(self.max_epoch_num - 1) + '.pth')
                 print("Testing uses last epoch as non-pretrained model!")
                 print(last_epoch_model_path)
-                self.model.load_state_dict(torch.load(last_epoch_model_path, map_location=torch.device('cpu')))
+                self.model.load_state_dict(torch.load(last_epoch_model_path))
             else:
                 best_model_path = os.path.join(
                     self.model_dir, self.model_file_name + '_Epoch' + str(self.best_epoch) + '.pth')
                 print("Testing uses best epoch selected using model selection as non-pretrained model!")
                 print(best_model_path)
-                self.model.load_state_dict(torch.load(best_model_path, map_location=torch.device('cpu')))
+                self.model.load_state_dict(torch.load(best_model_path))
 
         self.model = self.model.to(self.config.DEVICE)
         self.model.eval()
@@ -191,7 +191,6 @@ class EfficientPhysTrainer(BaseTrainer):
                     labels[subj_index][sort_index] = labels_test[idx * self.chunk_len:(idx + 1) * self.chunk_len]
 
         print('')
-        print("===Calculating Metrics===")
         calculate_metrics(predictions, labels, self.config)
 
     def save_model(self, index):
