@@ -100,7 +100,7 @@ class UBFCrPPGLoader(BaseLoader):
         success, frame = VidObj.read()
         frames = list()
         while success:
-            frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
+            frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2HSV)
             frame = np.asarray(frame)
             frames.append(frame)
             success, frame = VidObj.read()
