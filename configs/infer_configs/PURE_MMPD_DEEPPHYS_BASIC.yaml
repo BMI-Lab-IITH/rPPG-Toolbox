@@ -39,18 +39,16 @@ TEST:
         H: 72
         W: 72
 DEVICE: cuda:0
-NUM_OF_GPU_TRAIN: 1
+NUM_OF_GPU_TRAIN: 1 
 LOG:
   PATH: runs/exp
 MODEL:
   DROP_RATE: 0.2
   NAME: DeepPhys
-  TSCAN:
-    FRAME_DEPTH: 10
 INFERENCE:
   BATCH_SIZE: 4
-  EVALUATION_METHOD: "FFT"        # "FFT" or "peak detection"
+  EVALUATION_METHOD: FFT        # "FFT" or "peak detection"
   EVALUATION_WINDOW:
     USE_SMALLER_WINDOW: False        # Change this if you'd like an evaluation window smaller than the test video length
     WINDOW_SIZE: 10        # In seconds
-  MODEL_PATH:   "./final_model_release/PURE_DeepPhys.pth"
+  MODEL_PATH:   "final_model_release/PURE_DeepPhys.pth"
