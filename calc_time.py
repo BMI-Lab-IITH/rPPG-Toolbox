@@ -1,16 +1,16 @@
 import time
 import torch
 
-def bro(cat, dog):
-    cat = cat * dog
-    dog = cat * cat
-    meow = cat * cat * cat * cat * dog
+def test_function(param1, param2):
+    param1 = param1 * param2
+    param2 = param1 * param1
+    meow = param1 * param1 * param1 * param1 * param2
     
     return meow
  
 
 if __name__ == "__main__":
-    # Choose the size of the matrices for the multiplication
+    # Choose the size of the matrices for the multipliparam1ion
     a = 100
     b = 6758
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Call your algorithm function
-    result = bro(a, b)
+    result = test_function(a, b)
 
     # End the timer
     end_time = time.time()
