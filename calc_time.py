@@ -7,7 +7,6 @@ def test_function(param1, param2):
     meow = param1 * param1 * param1 * param1 * param2
     
     return meow
- 
 
 if __name__ == "__main__":
     # Choose the size of the matrices for the multipliparam1ion
